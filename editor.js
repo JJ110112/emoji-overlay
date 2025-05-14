@@ -228,10 +228,7 @@ function handleDrop(event) {
             emojiSrc = uriList;
         }
         
-        // Ensure the path is fully qualified
-        if (emojiSrc && !emojiSrc.startsWith('http') && !emojiSrc.startsWith('/')) {
-            emojiSrc = window.location.origin + '/' + emojiSrc;
-        }
+        // Do nothing! Always use the relative path as-is.
     }
 
     if (emojiSrc) {
