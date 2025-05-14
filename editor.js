@@ -154,10 +154,7 @@ function handleEmojiDragStart(event) {
         return;
     }
 
-    // Ensure full path
-    emojiSrc = emojiSrc.startsWith('http') || emojiSrc.startsWith('/') 
-        ? emojiSrc 
-        : window.location.origin + '/' + emojiSrc;
+    // Always use the relative path for drag-and-drop
     currentlyDraggedEmojiSrc = emojiSrc;
     console.log('[DragStart] currentlyDraggedEmojiSrc set to:', emojiSrc);
 
