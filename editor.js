@@ -32,7 +32,7 @@ const ctx = mainCanvas.getContext('2d');
 document.addEventListener('DOMContentLoaded', initEditor);
 
 
-// Initialize editor
+// Update initEditor to add CSS to prevent text selection and emojiEditor interference
 function initEditor() {
     uploadBtn.addEventListener('click', triggerImageUpload);
     imageUpload.addEventListener('change', handleImageUpload);
@@ -49,7 +49,7 @@ function initEditor() {
 
     // Add click event to canvas for selecting emojis
     mainCanvas.addEventListener('mousedown', startSelectEmoji);
-    emojiEditor.addEventListener('mousedown', startDragEmoji);
+    emojiEditor.removeEventListener('mousedown', startDragEmoji);
     document.addEventListener('mousemove', moveHandler);
     document.addEventListener('mouseup', stopHandler);
 
@@ -57,16 +57,13 @@ function initEditor() {
         handle.addEventListener('mousedown', startResizeEmoji);
     });
 
-    // Delete button handling
-    document.getElementById('deleteEmojiBtn').addEventListener('click', (event) => {
-        event.stopPropagation();
-        event.preventDefault();
-        if (selectedEmojiIndex >= 0 && selectedEmojiIndex < emojis.length) {
-            removeEmoji();
-            setTimeout(() => {
-                drawCanvas();
-            }, 10);
-        }
+    // Prevent text selection and ensure emojiEditor doesn't block events
+    mainCanvas.style.userSelect = 'none';
+    canvasContainer.style.userSelect = 'none';
+    emojiEditor.style.userSelect = 'none';
+    emojiEditor.style.pointerEvents = 'none'; // Allow events to pass through
+    resizeHandles.forEach(handle => {
+        handle.style.pointerEvents = 'auto'; // Enable resize handles
     });
 
     document.addEventListener('keydown', (event) => {
@@ -74,10 +71,8 @@ function initEditor() {
             ctrlKeyPressed = true;
             if (selectedEmojiIndex >= 0) {
                 mainCanvas.style.cursor = 'copy';
-                emojiEditor.style.cursor = 'copy';
             }
         }
-
         if (event.key === 'Delete' && selectedEmojiIndex >= 0 && selectedEmojiIndex < emojis.length) {
             removeEmoji();
             setTimeout(() => {
@@ -90,11 +85,9 @@ function initEditor() {
         if (event.key === 'Control') {
             ctrlKeyPressed = false;
             mainCanvas.style.cursor = 'default';
-            emojiEditor.style.cursor = 'default';
         }
     });
 
-    // Add dragstart event listeners to existing emoji items
     document.querySelectorAll('.emoji-item').forEach(item => {
         item.addEventListener('dragstart', handleEmojiDragStart);
         const img = item.querySelector('img');
@@ -103,7 +96,6 @@ function initEditor() {
         }
     });
 
-    // Observe dynamically added emoji items
     const emojiGrid = document.getElementById('emojiGrid');
     const observer = new MutationObserver(() => {
         document.querySelectorAll('.emoji-item').forEach(item => {
@@ -120,7 +112,6 @@ function initEditor() {
         childList: true,
         subtree: true
     });
-
 
     window.addEmojiToCanvas = addEmojiToCanvas;
     window.handleEmojiDragStart = handleEmojiDragStart;
@@ -428,64 +419,72 @@ function updateEmojiEditor(emoji) {
         return;
     }
     const canvasRect = mainCanvas.getBoundingClientRect();
-    const x = emoji.x;
-    const y = emoji.y;
-    const width = emoji.width;
-    const height = emoji.height;
-    emojiEditor.style.left = `${canvasRect.left + x}px`;
-    emojiEditor.style.top = `${canvasRect.top + y}px`;
-    emojiEditor.style.width = `${width}px`;
-    emojiEditor.style.height = `${height}px`;
+    emojiEditor.style.left = `${canvasRect.left + emoji.x}px`;
+    emojiEditor.style.top = `${canvasRect.top + emoji.y}px`;
+    emojiEditor.style.width = `${emoji.width}px`;
+    emojiEditor.style.height = `${emoji.height}px`;
     emojiEditor.classList.remove('hidden');
 }
 
-// Start selecting emoji by clicking on canvas
+// Modified canvas mousedown handler to start dragging immediately
+// Modified canvas mousedown handler with drag threshold
 function startSelectEmoji(event) {
+    if (event.target.classList.contains('resize-handle')) return;
+
     const canvasRect = mainCanvas.getBoundingClientRect();
     const x = event.clientX - canvasRect.left;
     const y = event.clientY - canvasRect.top;
-    selectEmojiOnCanvas(x, y);
-}
 
-// Start dragging emoji
-function startDragEmoji(event) {
-    // Prevent dragging if clicking on a resize handle
-    if (event.target.classList.contains('resize-handle')) return;
-
-    // Ensure we're dragging the currently selected emoji
-    if (selectedEmojiIndex >= 0 && emojis[selectedEmojiIndex]) {
-        // Check if we should duplicate (Ctrl key is pressed)
+    // Select emoji under the mouse
+    if (selectEmojiOnCanvas(x, y)) {
         if (ctrlKeyPressed) {
-            // Create a duplicate of the selected emoji
             const originalEmoji = emojis[selectedEmojiIndex];
             const duplicatedEmoji = {
                 img: originalEmoji.img,
-                x: originalEmoji.x + 20, // Offset slightly so user can see both
+                x: originalEmoji.x + 20,
                 y: originalEmoji.y + 20,
                 width: originalEmoji.width,
                 height: originalEmoji.height
             };
-
-            // Add the duplicated emoji to the array
             emojis.push(duplicatedEmoji);
-
-            // Select the new emoji
             selectedEmojiIndex = emojis.length - 1;
-
-            // Update the canvas
             drawCanvas();
             updateEmojiEditor(duplicatedEmoji);
         }
 
-        isDragging = true;
-        isResizing = false;
-        lastMousePos = {
-            x: event.clientX,
-            y: event.clientY
+        // Add drag threshold
+        lastMousePos = { x: event.clientX, y: event.clientY };
+        const startDrag = (moveEvent) => {
+            const dx = moveEvent.clientX - lastMousePos.x;
+            const dy = moveEvent.clientY - lastMousePos.y;
+            if (Math.sqrt(dx * dx + dy * dy) > 5) { // 5-pixel threshold
+                isDragging = true;
+                document.removeEventListener('mousemove', startDrag);
+                dragEmoji(moveEvent);
+            }
         };
+        document.addEventListener('mousemove', startDrag);
+        document.addEventListener('mouseup', () => {
+            document.removeEventListener('mousemove', startDrag);
+        }, { once: true });
+
         event.preventDefault();
-        console.log('Drag started for emoji', selectedEmojiIndex);
+        event.stopPropagation();
+        console.log('Potential drag started for emoji', selectedEmojiIndex);
+    } else {
+        selectedEmojiIndex = -1;
+        updateEmojiEditor(null);
+        drawCanvas();
     }
+}
+
+// Remove or modify the emojiEditor mousedown handler
+// Option 1: Remove it entirely if dragging is handled via canvas
+emojiEditor.removeEventListener('mousedown', startDragEmoji);
+// Optionally, keep a simplified version for specific interactions
+function startDragEmoji(event) {
+    if (event.target.classList.contains('resize-handle')) return;
+    // Delegate to canvas handler or do nothing, as canvas handles dragging
 }
 
 // Combined move handler for both dragging and resizing
@@ -497,14 +496,17 @@ function moveHandler(event) {
     }
 }
 
-// Combined stop handler for both dragging and resizing
-function stopHandler() {
+// Modified stop handler to ensure clean drag termination
+function stopHandler(event) {
     isDragging = false;
     isResizing = false;
+    window.getSelection().removeAllRanges();
+    event.preventDefault();
+    event.stopPropagation();
+    mainCanvas.style.cursor = 'default';
 }
 
-// Drag emoji
-// Modified dragEmoji function to maintain the copy cursor
+// Ensure dragEmoji prevents text selection and event propagation
 function dragEmoji(event) {
     if (!isDragging || selectedEmojiIndex < 0) return;
 
@@ -514,21 +516,21 @@ function dragEmoji(event) {
     emoji.x += deltaX;
     emoji.y += deltaY;
 
-    // Update cursor based on Ctrl key state
-    if (ctrlKeyPressed) {
-        mainCanvas.style.cursor = 'copy';
-        emojiEditor.style.cursor = 'copy';
-    } else {
-        mainCanvas.style.cursor = 'default';
-        emojiEditor.style.cursor = 'default';
-    }
+    // Keep emoji within canvas bounds
+    emoji.x = Math.max(0, Math.min(emoji.x, mainCanvas.width - emoji.width));
+    emoji.y = Math.max(0, Math.min(emoji.y, mainCanvas.height - emoji.height));
 
-    lastMousePos = {
-        x: event.clientX,
-        y: event.clientY
-    };
+    // Update cursor
+    mainCanvas.style.cursor = ctrlKeyPressed ? 'copy' : 'move';
+
+    lastMousePos = { x: event.clientX, y: event.clientY };
+    window.getSelection().removeAllRanges();
+    event.preventDefault();
+    event.stopPropagation();
+
     drawCanvas();
     updateEmojiEditor(emoji);
+    console.log('Dragging emoji', selectedEmojiIndex, 'to', emoji.x, emoji.y);
 }
 
 // Start resizing emoji
