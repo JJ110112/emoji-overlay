@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表情符號疊加器</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 
+        版權聲明：本應用程式使用的表情符號 SVG 檔案來自 Google Noto Emoji
+        Copyright 2013 Google, Inc. All Rights Reserved.
+        Licensed under the Apache License, Version 2.0
+    -->
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>表情符號</h2>
+            <div class="search-box">
+                <input type="text" id="searchEmoji" placeholder="搜尋表情符號...例如：笑臉、愛心">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="search-hint">
+                可搜尋：笑、哭、愛、心、星、貓、狗、食物、花等
+            </div>
+            
+            <div class="category-tabs">
+                <button class="category-tab active" data-category="Smileys & Emotion">表情</button>
+                <button class="category-tab" data-category="People & Body">人物</button>
+                <button class="category-tab" data-category="Animals & Nature">動物</button>
+                <button class="category-tab" data-category="Food & Drink">食物</button>
+                <button class="category-tab" data-category="Travel & Places">旅遊</button>
+                <button class="category-tab" data-category="Activities">活動</button>
+                <button class="category-tab" data-category="Objects">物品</button>
+                <button class="category-tab" data-category="Symbols">符號</button>
+                <button class="category-tab" data-category="Flags">旗幟</button>
+                <button class="category-tab" data-category="all">全部</button>
+            </div>
+            
+            <div class="emoji-grid" id="emojiGrid">
+                <!-- Emojis will be loaded here -->
+            </div>
+            <div class="loading" id="loadingEmojis">
+                <i class="fas fa-spinner fa-pulse"></i> 載入更多表情符號...
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="toolbar">
+                <button id="uploadBtn" class="btn primary">
+                    <i class="fas fa-upload"></i> 上傳圖片
+                </button>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                
+                <button id="downloadBtn" class="btn success" disabled>
+                    <i class="fas fa-download"></i> 下載
+                </button>
+                
+                <button id="removeEmojiBtn" class="btn danger" disabled>
+                    <i class="fas fa-trash-alt"></i> 移除所有表情符號
+                </button>
+            </div>
+            
+            <div class="canvas-container">
+                <div id="uploadPrompt">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>拖曳圖片至此處或點擊上方上傳按鈕</p>
+                </div>
+                <canvas id="mainCanvas"></canvas>
+            </div>
+            
+            <div class="copyright">
+                <small>表情符號來源：Google Noto Emoji</small>
+                <small>Copyright 2013 Google, Inc. All Rights Reserved.</small>
+                <small>Licensed under the Apache License, Version 2.0</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="emojiEditor" class="emoji-editor hidden">
+        <div class="resize-handle br" data-handle="br"></div>
+        <div id="deleteEmojiBtn" class="delete-button">×</div>
+    </div>
+
+    <script src="emoji-loader.js"></script>
+    <script src="editor.js"></script>
+</body>
+</html>
