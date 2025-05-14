@@ -243,8 +243,8 @@ function renderEmojis() {
         const div = document.createElement('div');
         div.className = 'emoji-item';
         div.setAttribute('draggable', 'true');
-        // Ensure full path for consistency
-        const fullPath = src.startsWith('http') || src.startsWith('/') ? src : `${EMOJI_SVG_PATH}${src.split('/').pop()}`;
+        // Always use relative path for consistency
+        const fullPath = src.startsWith('http') ? src : `${EMOJI_SVG_PATH}${src.split('/').pop()}`;
         div.dataset.path = fullPath;
         div.dataset.emojiSrc = fullPath;
 
@@ -355,10 +355,8 @@ async function addEmojiToGrid(emojiPath) {
     emojiItem.className = 'emoji-item';
     emojiItem.setAttribute('draggable', 'true');
 
-    // Ensure full path for consistency
-    const fullPath = emojiPath.startsWith('http') || emojiPath.startsWith('/')
-        ? emojiPath
-        : `${EMOJI_SVG_PATH}${emojiPath.split('/').pop()}`;
+    // Always use relative path for consistency
+    const fullPath = emojiPath.startsWith('http') ? emojiPath : `${EMOJI_SVG_PATH}${emojiPath.split('/').pop()}`;
     emojiItem.dataset.path = fullPath;
     emojiItem.dataset.emojiSrc = fullPath;
 
