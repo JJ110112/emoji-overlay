@@ -113,12 +113,6 @@ function initEditor() {
             if (img) {
                 img.setAttribute('draggable', 'true');
                 img.addEventListener('dragstart', handleEmojiDragStart);
-                img.addEventListener('click', () => {
-                    const emojiSrc = item.dataset.emojiSrc || item.dataset.path;
-                    if (emojiSrc && window.addEmojiToCanvas) {
-                        window.addEmojiToCanvas(emojiSrc);
-                    }
-                });
             }
         });
     });
